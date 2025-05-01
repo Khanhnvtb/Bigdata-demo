@@ -1,0 +1,66 @@
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode-ipm
+    restart: always
+    ports:
+      - 9870:9870
+      - 9000:9000
+    volumes:
+      - ./hadoop_namenode:/hadoop/dfs/name
+      - ./host_machine:/host_machine
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop.env
+    networks:
+      - shared_network
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode-ipm
+    restart: always
+    ports:
+      - 9864:9864
+    volumes:
+      - ./hadoop_datanode:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode-ipm:9870"
+    env_file:
+      - ./hadoop.env
+    networks:
+      - shared_network
+  
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager-ipm
+    restart: always
+    ports:
+      - 8088:8088
+      - 8030:8030
+      - 8031:8031
+      - 8032:8032
+    environment:
+      SERVICE_PRECONDITION: "namenode-ipm:9000 namenode-ipm:9870 datanode-ipm:9864"
+    env_file:
+      - ./hadoop.env
+    networks:
+      - shared_network
+
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager-ipm
+    restart: always
+    ports:
+      - 8042:8042
+    environment:
+      SERVICE_PRECONDITION: "namenode-ipm:9000 namenode-ipm:9870 datanode-ipm:9864 resourcemanager-ipm:8088"
+    env_file:
+      - ./hadoop.env
+    networks:
+      - shared_network
+networks:
+  shared_network:
+    external: true
+  
+  
