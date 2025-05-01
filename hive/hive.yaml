@@ -1,0 +1,38 @@
+services:
+  hive-metastore-postgresql:
+      image: bde2020/hive-metastore-postgresql:2.3.0
+      container_name: hive-metastore-postgresql-ipm
+      ports:
+        - "5432:5432"
+      volumes:
+        - ./postgres-data:/var/lib/postgresql/data
+      networks:
+        - shared_network
+  hive-metastore:
+      image: bde2020/hive:2.3.2-postgresql-metastore
+      container_name: hive-metastore-ipm
+      env_file:
+        - ./hadoop-hive.env
+      command: /opt/hive/bin/hive --service metastore
+      environment:
+        SERVICE_PRECONDITION: "namenode:9870 datanode:9864 hive-metastore-postgresql:5432"
+      ports:
+        - "9083:9083"
+      networks:
+        - shared_network
+  hive-server:
+      image: bde2020/hive:2.3.2-postgresql-metastore
+      container_name: hive-server-ipm
+      env_file:
+        - ./hadoop-hive.env
+      environment:
+        HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+        SERVICE_PRECONDITION: "hive-metastore-ipm:9083"
+      ports:
+        - "10000:10000"
+      networks:
+        - shared_network
+networks:
+  shared_network:
+    external: true
+
